@@ -4,7 +4,8 @@
 #include <Array.au3>
 ;#include <GDIPlus.au3> ;_GDIPlus_GraphicsDrawRect ( $hGraphics, $nX, $nY, $nWidth, $nHeight [, $hPen = 0] )
 
-Local $grid_size = 15
+Local $grid_size = 60 ;How many squares in x and y axis
+Local $grid_pixel = 15 ;How many pixels per square
 Local $xy[($grid_size * $grid_size) + 1][6]
 Local $row
 Local $col
@@ -34,7 +35,10 @@ Next
 ; Initialize GDI+ library
 ;_GDIPlus_Startup()
 
-Local $gui = GUICreate("Field", 1200, 800)
+; 150px * (number of squares * 50px) = width
+;
+
+Local $gui = GUICreate("Field", 200 + $grid_size * $grid_pixel, 100 + $grid_size * $grid_pixel) ; title, width, height
 GUICtrlCreateLabel("Hello world! How are you?", 30, 10)
 Local $iOKButton = GUICtrlCreateButton("OK", 70, 50, 60)
 Local $iResetButton = GUICtrlCreateButton("Reset", 70, 80, 60)
@@ -45,14 +49,14 @@ GUICtrlSetState($iResetButton, $GUI_DISABLE)
 ;Local $hPen = _GDIPlus_PenCreate(0xFF000000, 2) ;color format AARRGGBB (hex)
 
 Local $squarenr = 0
-For $i = 0 To ($grid_size * 50) - 50 Step 50
-   For $j = 0 To ($grid_size * 50) - 50 Step 50
+For $i = 0 To ($grid_size * $grid_pixel) - $grid_pixel Step $grid_pixel
+   For $j = 0 To ($grid_size * $grid_pixel) - $grid_pixel Step $grid_pixel
 	  ;_GDIPlus_GraphicsDrawRect($hGraphics, 150 + $j, 50 + $i, 50, 50, $hPen)
-	  $xy[$squarenr + 1][2] = GUICtrlCreateLabel("x", 150 + $J, 50 + $i, 50, 50, $SS_SUNKEN)
-	  $xy[$squarenr + 1][3] = $data[Int($i)/50][int($j)/50]
+	  $xy[$squarenr + 1][2] = GUICtrlCreateLabel("x", 150 + $J, 50 + $i, $grid_pixel, $grid_pixel, $SS_SUNKEN)
+	  $xy[$squarenr + 1][3] = $data[Int($i)/$grid_pixel][int($j)/$grid_pixel]
 	  GUICtrlSetBkColor(-1, 0xeeeeee) ; GUICtrlSetBkColor(-1, 0x44AA44)
 	  $xy[$squarenr + 1][0] = 150 + $j
-	  $xy[$squarenr + 1][1] = 50 + $i
+	  $xy[$squarenr + 1][1] = $grid_pixel + $i
 	  $row = Floor($squarenr / $grid_size)
 	  ;$col = $squarenr - ($row * $grid_size)
 	  $col = Mod($squarenr, $grid_size)
