@@ -201,32 +201,32 @@ Exit
 Func startmap()
    Dim $nodes[$grid_max]
    Global $open[$grid_max][4]
-   Global $closed[$grid_max]
+   Global $closed[$grid_max][2]
    Local $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
    Local $loc = 1
 
-   $closed[0] = 0
+   $closed[0][0] = 0
    $open[0][0] = 1
    $open[1][0] = Get_H($start, $goal)
    $open[1][1] = $start
+   $open[1][2] = 0
+   $open[1][3] = 0
 
-   For $i = 1 To 100
+   For $i = 1 To 1000
+   ;_ArrayDisplay($open)
 	  AddOpen($start, $loc)
-	  _ArrayDisplay($open)
-	  ;$start = _ArrayMin($open, 1, 0, 0, 0)
-	  msgbox(0,"",_ArrayMinIndex($open, 1, 1, $open[0][0]))
-	  ;msgbox(0,"",@error)
+   ;_ArrayDisplay($open)
+	  $loc = _ArrayMinIndex($open, 1, 1, $open[0][0])
+	  $start = $open[$loc][1]
 	  ;msgbox(0,"",$start)
-	  For $j = 1 To $open[0][0]
-		 If $open[$j][0] < $start Then
-			$start = $open[$j][0]
-			$loc = $open[$j][1]
-			;msgbox(0,"",$loc)
-		 EndIf
-	  Next
+	  If $start = $xy[$goal][6] Then
+		 msgbox(0,"","You've found the exit!")
+		 Exit
+	  EndIf
 	  UpdateOpen($start)
    Next
+
 _ArrayDisplay($open)
 _ArrayDisplay($closed)
 exit
@@ -243,52 +243,59 @@ EndFunc
 Func AddOpen($start, $loc)
    Local $counter = 1
 
-   $closed[0] = $closed[0] + 1
-   $closed[$closed[0]] = $start
+   $closed[0][0] = $closed[0][0] + 1
+   $closed[$closed[0][0]][0] = $start
+   $closed[$closed[0][0]][1] = $open[$loc][1]
 
    _ArrayDelete($open, $loc)
    $open[0][0] = $open[0][0] - 1
 
-   If $start > 16 Then
-	  ;msgbox(0,"",$start)
-	  ;ConsoleWrite($start + 1&"-1"&@CRLF)
-	  $open[$open[0][0]+$counter][0] = Get_H($start - 15, $goal)
-	  $open[$open[0][0]+$counter][1] = $start - 15
+;_ArrayDisplay($open)
+
+   GUICtrlSetBkColor($xy[$closed[0][0]][2], "0xff0000") ; col 2 = labelID
+   GUICtrlSetBkColor($xy[$open[$loc][1]][2], "0x00ff00")
+   Sleep(150)
+
+   $process = $start - 15
+   If $start > 0 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+	  $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
+	  $open[$open[0][0]+$counter][1] = $process
+	  ;msgbox(0,"","1 - "&$process)
 	  $open[$open[0][0]+$counter][2] = 10
-	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start - 15)
-	  ;$open[0][0] = $open[0][0] + 1
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
 	  $counter = $counter + 1
    EndIf
 
-   If IsInt($start / 15) = 0 Then
-	  ;ConsoleWrite($start + 1&"-2"&@CRLF)
-	  $open[$open[0][0]+$counter][0] = Get_H($start + 1, $goal)
-	  $open[$open[0][0]+$counter][1] = $start + 1
+   $process = $start + 1
+   If IsInt($start / 15) = 0 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+	  $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
+	  $open[$open[0][0]+$counter][1] = $process
+	  ;msgbox(0,"","2 - "&$process)
 	  $open[$open[0][0]+$counter][2] = 10
-	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start + 1)
-	  ;$open[0][0] = $open[0][0] + 1
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
 	  $counter = $counter + 1
    EndIf
 
-   If $start < (Ubound($open) - 15) Then
-	  ;ConsoleWrite($start + 15&"-3"&@CRLF)
-	  $open[$open[0][0]+$counter][0] = Get_H($start + 15, $goal)
-	  $open[$open[0][0]+$counter][1] = $start + 15
+   $process = $start + 15
+   If $start < (Ubound($open) - 15) And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+	  $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
+	  $open[$open[0][0]+$counter][1] = $process
+	  ;msgbox(0,"","3 - "&$process)
 	  $open[$open[0][0]+$counter][2] = 10
-	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start + 15)
-	  ;$open[0][0] = $open[0][0] + 1
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
 	  $counter = $counter + 1
    EndIf
 
-   If IsInt($start / 16) = 0 And $start <> 1 Then
-	  ;ConsoleWrite($start - 1&"-4"&@CRLF)
-	  $open[$open[0][0]+$counter][0] = Get_H($start - 1, $goal)
-	  $open[$open[0][0]+$counter][1] = $start - 1
+   $process = $start - 1
+   If IsInt($start / 16) = 0 And $start <> 1 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+	  $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
+	  $open[$open[0][0]+$counter][1] = $process
+	  ;msgbox(0,"","4 - "&$process)
 	  $open[$open[0][0]+$counter][2] = 10
-	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start - 1)
-	  ;$open[0][0] = $open[0][0] + 1
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
 	  $counter = $counter + 1
    EndIf
+
    $open[0][0] = $open[0][0] + ($counter - 1) ; -1 wel goed??
 EndFunc
 
