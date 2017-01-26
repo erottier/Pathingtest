@@ -200,27 +200,32 @@ Exit
 
 Func startmap()
    Dim $nodes[$grid_max]
-   Global $open[$grid_max][2]
+   Global $open[$grid_max][4]
    Global $closed[$grid_max]
-   Local $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3)
+   Local $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
+   Local $loc = 1
 
+   $closed[0] = 0
    $open[0][0] = 1
-   $open[1][0] = Get_H($start)
+   $open[1][0] = Get_H($start, $goal)
    $open[1][1] = $start
 
-   ;Do
-	  For $i = 1 To 10
-		 AddOpen($start)
-		 $newstart = 2
-		 For $j = $newstart To $open[0][0]
-			If $open[$j][0] < $open[$newstart][0] Then $newstart = $j
-		 Next
-		;_ArrayDisplay($open)
-		 $start = $xy[$open[$newstart][1]][6]
-		 ;$start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3)
+   For $i = 1 To 10
+	  AddOpen($start, $loc)
+	  For $j = 1 To $open[0][0]
+		 If $open[$j][0] < $start Then
+			$start = $open[$j][0]
+			$loc = $open[$j][1]
+			msgbox(0,"",$loc)
+			_ArrayDisplay($open)
+		 EndIf
 	  Next
-	  _ArrayDisplay($open)
+	  UpdateOpen($start)
+   Next
+
+exit
+
 	  ;If AddOpen() = 0 Then $goalreached = True
    ;Until $goalreached = True
 
@@ -230,42 +235,86 @@ Func UpdateOpen($start)
    ;Update the whole $open array with new h_cost values
 EndFunc
 
-Func AddOpen($start)
-
-   ;_ArrayDisplay($open)
-   _ArrayDelete($open, $open[0][0])
-   $open[0][0] = $open[0][0] - 1
-   ;_ArrayDisplay($open)
-
-   $open[$open[0][0]+1][0] = Get_H($start - 15)
-   $open[$open[0][0]+1][1] = $start - 15
-
-   $open[$open[0][0]+2][0] = Get_H($start + 1)
-   $open[$open[0][0]+2][1] = $start + 1
-
-   $open[$open[0][0]+3][0] = Get_H($start + 15)
-   $open[$open[0][0]+3][1] = $start + 15
-
-   $open[$open[0][0]+4][0] = Get_H($start - 1)
-   $open[$open[0][0]+4][1] = $start - 1
-
-   $open[0][0] = $open[0][0] + 4
+Func AddOpen($start, $loc)
+   Local $counter = 1
 
    $closed[0] = $closed[0] + 1
-   $closed[0] = $start
+   $closed[$closed[0]] = $start
+
+   _ArrayDelete($open, $loc)
+   $open[0][0] = $open[0][0] - 1
+
+   If $start > 16 Then
+	  $open[$open[0][0]$counter][0] = Get_H($start - 15, $goal)
+	  $open[$open[0][0]$counter][1] = $start - 15
+	  $open[$open[0][0]$counter][2] = 10
+	  $open[$open[0][0]$counter][3] = Get_H($closed[0], $start - 15)
+   EndIf
+
+   $counter = $counter + 1
+
+   If mod($start, 15)  ; !!! WERK !!!
+   ConsoleWrite($start + 1&"-2"&@CRLF)
+   $open[$open[0][0]$counter][0] = Get_H($start + 1, $goal)
+   $open[$open[0][0]$counter][1] = $start + 1
+   $open[$open[0][0]$counter][2] = 10
+   $open[$open[0][0]$counter][3] = Get_H($closed[0], $start + 1)
+
+   $counter = $counter + 1
+
+   ConsoleWrite($start + 15&"-3"&@CRLF)
+   $open[$open[0][0]$counter][0] = Get_H($start + 15, $goal)
+   $open[$open[0][0]$counter][1] = $start + 15
+   $open[$open[0][0]$counter][2] = 10
+   $open[$open[0][0]$counter][3] = Get_H($closed[0], $start + 15)
+
+   $counter = $counter + 1
+
+   ConsoleWrite($start - 1&"-4"&@CRLF)
+   $open[$open[0][0]+4][0] = Get_H($start - 1, $goal)
+   $open[$open[0][0]+4][1] = $start - 1
+   $open[$open[0][0]+4][2] = 10
+   $open[$open[0][0]+4][3] = Get_H($closed[0], $start - 1)
+
+   $open[0][0] = $open[0][0] + 4
 EndFunc
 
-Func Get_H($start)
+Func Get_H($start, $goal)
    ; H(euristic) Cost = Number of squares = Length + Width – (1 of HFC/GCD)
+if $start <= 0 Then _ArrayDisplay($open)
+   Local $width2
+   Local $length2
+   Local $xygoallength = $xy[$goal][5]
+   Local $xystartlength = $xy[$start][5]
+   Local $xygoalwidth = $xy[$goal][4]
+   Local $xystartwidth = $xy[$start][4]
+
+   If $xygoallength > $xystartlength Then
+	  $length2 = $xygoallength - $xystartlength
+   Elseif $xystartlength > $xygoallength Then
+	  $length2 = $xystartlength - $xygoallength
+   Else
+	  $length2 = 1
+   EndIf
+
+   If $xygoalwidth > $xystartwidth Then
+	  $width2 = $xygoalwidth - $xystartwidth
+   Elseif $xystartwidth > $xygoalwidth Then
+	  $width2 = $xystartwidth - $xygoalwidth
+   Else
+	  $width2 = 1
+   EndIf
+   ;$width2 = $xygoalwidth - $xystartwidth
 
    ; !!! ToDo: Insert logic hier als de de goal niet rechtsonder de start ligt? !!!
-   $length = $xy[$goal][5] - $xy[$start][5]
-   $width = $xy[$goal][4] - $xy[$start][4]
+   ;$length = $xy[$goal][5] - $xy[$start][5]
+   ;$width = $xy[$goal][4] - $xy[$start][4]
    ;msgbox(0,"",$length & " + " & $width & " - " & _GCD($length, $width))
-   If $width = $length Then
-	  Return $length + $width - 1
+   If $width2 = $length2 Then
+	  Return $length2 + $width2 - 1
    Else
-	  Return $length + $width - _GCD($length, $width)
+	  ;msgbox(0,"",$length & " + " & $width & " - " & _GCD($length, $width))
+	  Return $length2 + $width2 - _GCD($length2, $width2)
    EndIf
 EndFunc
 
