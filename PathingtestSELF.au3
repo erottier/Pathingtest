@@ -211,19 +211,24 @@ Func startmap()
    $open[1][0] = Get_H($start, $goal)
    $open[1][1] = $start
 
-   For $i = 1 To 10
+   For $i = 1 To 100
 	  AddOpen($start, $loc)
+	  _ArrayDisplay($open)
+	  ;$start = _ArrayMin($open, 1, 0, 0, 0)
+	  msgbox(0,"",_ArrayMinIndex($open, 1, 1, $open[0][0]))
+	  ;msgbox(0,"",@error)
+	  ;msgbox(0,"",$start)
 	  For $j = 1 To $open[0][0]
 		 If $open[$j][0] < $start Then
 			$start = $open[$j][0]
 			$loc = $open[$j][1]
-			msgbox(0,"",$loc)
-			_ArrayDisplay($open)
+			;msgbox(0,"",$loc)
 		 EndIf
 	  Next
 	  UpdateOpen($start)
    Next
-
+_ArrayDisplay($open)
+_ArrayDisplay($closed)
 exit
 
 	  ;If AddOpen() = 0 Then $goalreached = True
@@ -245,43 +250,51 @@ Func AddOpen($start, $loc)
    $open[0][0] = $open[0][0] - 1
 
    If $start > 16 Then
-	  $open[$open[0][0]$counter][0] = Get_H($start - 15, $goal)
-	  $open[$open[0][0]$counter][1] = $start - 15
-	  $open[$open[0][0]$counter][2] = 10
-	  $open[$open[0][0]$counter][3] = Get_H($closed[0], $start - 15)
+	  ;msgbox(0,"",$start)
+	  ;ConsoleWrite($start + 1&"-1"&@CRLF)
+	  $open[$open[0][0]+$counter][0] = Get_H($start - 15, $goal)
+	  $open[$open[0][0]+$counter][1] = $start - 15
+	  $open[$open[0][0]+$counter][2] = 10
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start - 15)
+	  ;$open[0][0] = $open[0][0] + 1
+	  $counter = $counter + 1
    EndIf
 
-   $counter = $counter + 1
+   If IsInt($start / 15) = 0 Then
+	  ;ConsoleWrite($start + 1&"-2"&@CRLF)
+	  $open[$open[0][0]+$counter][0] = Get_H($start + 1, $goal)
+	  $open[$open[0][0]+$counter][1] = $start + 1
+	  $open[$open[0][0]+$counter][2] = 10
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start + 1)
+	  ;$open[0][0] = $open[0][0] + 1
+	  $counter = $counter + 1
+   EndIf
 
-   If mod($start, 15)  ; !!! WERK !!!
-   ConsoleWrite($start + 1&"-2"&@CRLF)
-   $open[$open[0][0]$counter][0] = Get_H($start + 1, $goal)
-   $open[$open[0][0]$counter][1] = $start + 1
-   $open[$open[0][0]$counter][2] = 10
-   $open[$open[0][0]$counter][3] = Get_H($closed[0], $start + 1)
+   If $start < (Ubound($open) - 15) Then
+	  ;ConsoleWrite($start + 15&"-3"&@CRLF)
+	  $open[$open[0][0]+$counter][0] = Get_H($start + 15, $goal)
+	  $open[$open[0][0]+$counter][1] = $start + 15
+	  $open[$open[0][0]+$counter][2] = 10
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start + 15)
+	  ;$open[0][0] = $open[0][0] + 1
+	  $counter = $counter + 1
+   EndIf
 
-   $counter = $counter + 1
-
-   ConsoleWrite($start + 15&"-3"&@CRLF)
-   $open[$open[0][0]$counter][0] = Get_H($start + 15, $goal)
-   $open[$open[0][0]$counter][1] = $start + 15
-   $open[$open[0][0]$counter][2] = 10
-   $open[$open[0][0]$counter][3] = Get_H($closed[0], $start + 15)
-
-   $counter = $counter + 1
-
-   ConsoleWrite($start - 1&"-4"&@CRLF)
-   $open[$open[0][0]+4][0] = Get_H($start - 1, $goal)
-   $open[$open[0][0]+4][1] = $start - 1
-   $open[$open[0][0]+4][2] = 10
-   $open[$open[0][0]+4][3] = Get_H($closed[0], $start - 1)
-
-   $open[0][0] = $open[0][0] + 4
+   If IsInt($start / 16) = 0 And $start <> 1 Then
+	  ;ConsoleWrite($start - 1&"-4"&@CRLF)
+	  $open[$open[0][0]+$counter][0] = Get_H($start - 1, $goal)
+	  $open[$open[0][0]+$counter][1] = $start - 1
+	  $open[$open[0][0]+$counter][2] = 10
+	  $open[$open[0][0]+$counter][3] = Get_H($closed[0], $start - 1)
+	  ;$open[0][0] = $open[0][0] + 1
+	  $counter = $counter + 1
+   EndIf
+   $open[0][0] = $open[0][0] + ($counter - 1) ; -1 wel goed??
 EndFunc
 
 Func Get_H($start, $goal)
    ; H(euristic) Cost = Number of squares = Length + Width – (1 of HFC/GCD)
-if $start <= 0 Then _ArrayDisplay($open)
+If $start <= 0 Then _ArrayDisplay($open)
    Local $width2
    Local $length2
    Local $xygoallength = $xy[$goal][5]
