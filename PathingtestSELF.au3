@@ -208,6 +208,9 @@ Func startmap()
 
    $closed[0][0] = 0
    $open[0][0] = 1
+   $open[0][1] = "ID"
+   $open[0][2] = "G-cost" ; Distance from starting node (10 for straight, 14 for diagonal)
+   $open[0][3] = "H-cost" ; Distance from end-node (GCD or HCD)
    $open[1][0] = Get_H($start, $goal)
    $open[1][1] = $start
    $open[1][2] = 0
@@ -262,6 +265,7 @@ Func AddOpen($start, $loc)
 		 $counter = $counter + 1
 		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
 		 If $process = $xy[$goal][6] Then
+			_ArrayDisplay($open)
 			msgbox(0,"","You've found the exit!")
 			Exit
 		 EndIf
@@ -280,6 +284,7 @@ Func AddOpen($start, $loc)
 		 $counter = $counter + 1
 		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
 		 If $process = $xy[$goal][6] Then
+			_ArrayDisplay($open)
 			msgbox(0,"","You've found the exit!")
 			Exit
 		 EndIf
@@ -298,6 +303,7 @@ Func AddOpen($start, $loc)
 		 $counter = $counter + 1
 		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
 		 If $process = $xy[$goal][6] Then
+			_ArrayDisplay($open)
 			msgbox(0,"","You've found the exit!")
 			Exit
 		 EndIf
@@ -316,6 +322,7 @@ Func AddOpen($start, $loc)
 		 $counter = $counter + 1
 		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
 		 If $process = $xy[$goal][6] Then
+			_ArrayDisplay($open)
 			msgbox(0,"","You've found the exit!")
 			Exit
 		 EndIf
@@ -328,10 +335,35 @@ EndFunc
 
 
 
+Func Get_H($start, $goal) ; H = 14 * y + 10 * (x-y)
+   Local $width2
+   Local $length2
+   Local $xygoallength = $xy[$goal][5]
+   Local $xystartlength = $xy[$start][5]
+   Local $xygoalwidth = $xy[$goal][4]
+   Local $xystartwidth = $xy[$start][4]
 
-Func Get_H($start, $goal)
+   If $xystartlength < $xygoallength Then
+	  $length2 = 14 * $xygoallength - $xystartlength
+   EndIf
+
+   If $xystartlength > $xygoallength Then
+	  $length2 = 14 * $xystartlength - $xygoallength
+   EndIf
+
+   If $xystartwidth < $xygoalwidth Then
+	  $width = 10 * ($xygoalwidth - $xystartwidth - ($length2 / 14))
+   EndIf
+
+   If $xystartwidth > $xygoalwidth Then
+	  $width = 10 *  ($xystartwidth - $xygoalwidth - ($length2 / 14))
+   EndIf
+
+EndFunc
+
+Func Get_H_old($start, $goal)
    ; H(euristic) Cost = Number of squares = Length + Width – (1 of HFC/GCD)
-If $start <= 0 Then _ArrayDisplay($open)
+   ;If $start <= 0 Then _ArrayDisplay($open)
    Local $width2
    Local $length2
    Local $xygoallength = $xy[$goal][5]
@@ -361,9 +393,10 @@ If $start <= 0 Then _ArrayDisplay($open)
    ;$width = $xy[$goal][4] - $xy[$start][4]
    ;msgbox(0,"",$length & " + " & $width & " - " & _GCD($length, $width))
    If $width2 = $length2 Then
+	  msgbox(0,"",$length2 + $width2 - 1)
 	  Return $length2 + $width2 - 1
    Else
-	  ;msgbox(0,"",$length & " + " & $width & " - " & _GCD($length, $width))
+	  msgbox(0,"",$length2 + $width2 - _GCD($length2, $width2))
 	  Return $length2 + $width2 - _GCD($length2, $width2)
    EndIf
 EndFunc
