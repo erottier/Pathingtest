@@ -322,7 +322,7 @@ Func AddOpen($start, $loc)
 		 $counter = $counter + 1
 		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
 		 If $process = $xy[$goal][6] Then
-			_ArrayDisplay($open)
+			;_ArrayDisplay($open)
 			msgbox(0,"","You've found the exit!")
 			Exit
 		 EndIf
@@ -336,68 +336,79 @@ EndFunc
 
 
 Func Get_H($start, $goal) ; H = 14 * y + 10 * (x-y)
-   Local $width2
-   Local $length2
-   Local $xygoallength = $xy[$goal][5]
-   Local $xystartlength = $xy[$start][5]
-   Local $xygoalwidth = $xy[$goal][4]
-   Local $xystartwidth = $xy[$start][4]
+   Local $width = 0
+   Local $height = 0
+   Local $y = 0
+   Local $x = 0
+   Local $goalheight = $xy[$goal][5] ; 5 = row
+   Local $startheight = $xy[$start][5]
+   Local $goalwidth = $xy[$goal][4] ; 4 = column
+   Local $startwidth = $xy[$start][4]
 
-   If $xystartlength < $xygoallength Then
-	  $length2 = 14 * $xygoallength - $xystartlength
+   If $startwidth = $goalwidth Or $startheight = $goalheight Then Return Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
+
+   If $goalwidth > $startwidth Then
+	  If $goalheight > $startheight Then
+		 Do
+			$y = $y + 1
+		 Until $startwidth + $y = $goalwidth Or $startheight + $y = $goalheight
+		 $height = 14 * $y
+		 If $startwidth + $y = $goalwidth And $startheight + $y = $goalheight Then
+			;
+		 Else
+			$width = Check_straight($startwidth + $y, $goalwidth, $startheight + $y, $goalheight)
+		 EndIf
+	  Else
+		 Do
+			$y = $y + 1
+		 Until $startwidth + $y = $goalwidth Or $startheight - $y = $goalheight
+		 $height = 14 * $y
+		 If $startwidth + $y = $goalwidth And $startheight - $y = $goalheight Then
+			;
+		 Else
+			$width = Check_straight($startwidth + $y, $goalwidth, $startheight - $y, $goalheight)
+		 EndIf
+	  EndIf
+   Else
+	  If $goalheight > $startheight Then
+		 Do
+			$y = $y + 1
+		 Until $startwidth - $y = $goalwidth Or $startheight + $y = $goalheight
+		 $height = 14 * $y
+		 If $startwidth - $y = $goalwidth And $startheight + $y = $goalheight Then
+			;
+		 Else
+			$width = Check_straight($startwidth - $y, $goalwidth, $startheight + $y, $goalheight)
+		 EndIf
+	  Else
+		 Do
+			$y = $y + 1
+		 Until $startwidth - $y = $goalwidth Or $startheight - $y = $goalheight
+		 $height = 14 * $y
+		 If $startwidth - $y = $goalwidth And $startheight - $y = $goalheight Then
+			;
+		 Else
+			$width = Check_straight($startwidth - $y, $goalwidth, $startheight - $y, $goalheight)
+		 EndIf
+	  EndIf
    EndIf
 
-   If $xystartlength > $xygoallength Then
-	  $length2 = 14 * $xystartlength - $xygoallength
-   EndIf
-
-   If $xystartwidth < $xygoalwidth Then
-	  $width = 10 * ($xygoalwidth - $xystartwidth - ($length2 / 14))
-   EndIf
-
-   If $xystartwidth > $xygoalwidth Then
-	  $width = 10 *  ($xystartwidth - $xygoalwidth - ($length2 / 14))
-   EndIf
+   Return $height + $width
 
 EndFunc
 
-Func Get_H_old($start, $goal)
-   ; H(euristic) Cost = Number of squares = Length + Width – (1 of HFC/GCD)
-   ;If $start <= 0 Then _ArrayDisplay($open)
-   Local $width2
-   Local $length2
-   Local $xygoallength = $xy[$goal][5]
-   Local $xystartlength = $xy[$start][5]
-   Local $xygoalwidth = $xy[$goal][4]
-   Local $xystartwidth = $xy[$start][4]
+Func Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
 
-   If $xygoallength > $xystartlength Then
-	  $length2 = $xygoallength - $xystartlength
-   Elseif $xystartlength > $xygoallength Then
-	  $length2 = $xystartlength - $xygoallength
-   Else
-	  $length2 = 1
+   If $startwidth < $goalwidth Then
+	  Return 10 * ($goalwidth - $startwidth)
+   ElseIf $startwidth > $goalwidth Then
+	  Return 10 * ($startwidth - $goalwidth)
    EndIf
 
-   If $xygoalwidth > $xystartwidth Then
-	  $width2 = $xygoalwidth - $xystartwidth
-   Elseif $xystartwidth > $xygoalwidth Then
-	  $width2 = $xystartwidth - $xygoalwidth
-   Else
-	  $width2 = 1
-   EndIf
-   ;$width2 = $xygoalwidth - $xystartwidth
-
-   ; !!! ToDo: Insert logic hier als de de goal niet rechtsonder de start ligt? !!!
-   ;$length = $xy[$goal][5] - $xy[$start][5]
-   ;$width = $xy[$goal][4] - $xy[$start][4]
-   ;msgbox(0,"",$length & " + " & $width & " - " & _GCD($length, $width))
-   If $width2 = $length2 Then
-	  msgbox(0,"",$length2 + $width2 - 1)
-	  Return $length2 + $width2 - 1
-   Else
-	  msgbox(0,"",$length2 + $width2 - _GCD($length2, $width2))
-	  Return $length2 + $width2 - _GCD($length2, $width2)
+   If $startheight > $goalheight Then
+	  Return 10 * ($startheight - $goalheight)
+   ElseIf $startheight < $goalheight Then
+	  Return 10 * ($goalheight - $startheight)
    EndIf
 EndFunc
 
