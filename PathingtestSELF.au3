@@ -200,7 +200,7 @@ Exit
 
 Func startmap()
    Dim $nodes[$grid_max]
-   Global $open[$grid_max][4]
+   Global $open[$grid_max][5]
    Global $closed[$grid_max][2]
    Local $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
@@ -209,133 +209,100 @@ Func startmap()
    $closed[0][0] = 0
    $open[0][0] = 1
    $open[0][1] = "ID"
-   $open[0][2] = "G-cost" ; Distance from starting node (10 for straight, 14 for diagonal)
-   $open[0][3] = "H-cost" ; Distance from end-node (GCD or HCD)
-   $open[1][0] = Get_H($start, $goal)
+   $open[0][2] = "H-cost"
+   $open[0][3] = "G-cost"
+   $open[0][4] = "ParentID"
+   $open[1][0] = Get_Distance($start, $goal)
    $open[1][1] = $start
    $open[1][2] = 0
    $open[1][3] = 0
 
-   For $i = 1 To 1000
-   ;_ArrayDisplay($open)
-   If $start = "" Then
-	  msgbox(0,"","$start is empty!")
-	  Exit
-   EndIf
-	  AddOpen($start, $loc)
-   ;_ArrayDisplay($open)
-	  $loc = _ArrayMinIndex($open, 1, 1, $open[0][0])
-	  $start = $open[$loc][1]
-	  ;msgbox(0,"",$start)
-	  UpdateOpen($start)
-   Next
-
-_ArrayDisplay($open)
-_ArrayDisplay($closed)
-exit
-
-	  ;If AddOpen() = 0 Then $goalreached = True
-   ;Until $goalreached = True
-
+   ;For $i = 1 To 1000 ; safeguard for testing
+   Do ; Main loop
+	  If $start = "" Then
+		 msgbox(0,"","$start is empty!")
+		 ExitLoop
+	  EndIf
+		 Checkpath($start, $loc)
+	  ;_ArrayDisplay($open)
+		 $loc = _ArrayMinIndex($open, 1, 1, $open[0][0])
+		 $start = $open[$loc][1]
+	  ;Next
+   Until $open[$open[0][0]][0] = 0
 EndFunc
 
-Func UpdateOpen($start)
-   ;Update the whole $open array with new h_cost values
+Func UpdateOpen($process, $start) ; Update given open-cell with the new low cost AND parent
+   msgbox(0,"","test")
 EndFunc
 
-Func AddOpen($start, $loc)
+Func Checkpath($start, $loc)
    Local $counter = 1
 
    $closed[0][0] = $closed[0][0] + 1
    $closed[$closed[0][0]][0] = $start
-   $closed[$closed[0][0]][1] = $open[$loc][1]
+   $closed[$closed[0][0]][1] = $open[$loc][4]
    GUICtrlSetBkColor($xy[$open[$loc][1]][2], "0xff0000") ; RED col 2 = labelID
 
    _ArrayDelete($open, $loc)
    $open[0][0] = $open[0][0] - 1
 
    $process = $start - 15
-   ;ConsoleWrite($xy[$process][3] & " <-> " & $start & " <-> " & _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) & " <-> " & _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) & @CRLF)
    If $xy[$process][3] <> "x" Then
-	  If $start > 0 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
-		 $open[$open[0][0]+$counter][1] = $process
-		 $open[$open[0][0]+$counter][2] = 10
-		 $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
-		 $counter = $counter + 1
-		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
-		 If $process = $xy[$goal][6] Then
-			_ArrayDisplay($open)
-			msgbox(0,"","You've found the exit!")
-			Exit
-		 EndIf
-		 Sleep(50)
+	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
+		 UpdateOpen($process, $start)
+	  ElseIf $start > 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+		Add_open($start, $counter, $process)
 	  EndIf
    EndIf
 
    $process = $start + 1
-   ;ConsoleWrite($xy[$process][3] & " <-> " & $start & " <-> " & _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) & " <-> " & _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) & @CRLF)
    If $xy[$process][3] <> "x" Then
-	  If IsInt($start / 15) = 0 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
-		 $open[$open[0][0]+$counter][1] = $process
-		 $open[$open[0][0]+$counter][2] = 10
-		 $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
-		 $counter = $counter + 1
-		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
-		 If $process = $xy[$goal][6] Then
-			_ArrayDisplay($open)
-			msgbox(0,"","You've found the exit!")
-			Exit
-		 EndIf
-		 Sleep(50)
+	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
+		 UpdateOpen($process, $start)
+	  ElseIf IsInt($start / 15) = 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+		 Add_open($start, $counter, $process)
 	  EndIf
    EndIf
 
    $process = $start + 15
-   ;ConsoleWrite($xy[$process][3] & " <-> " & $start & " <-> " & _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) & " <-> " & _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) & @CRLF)
    If $xy[$process][3] <> "x" Then
-	  If $start < ($grid_max - 15) And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
-		 $open[$open[0][0]+$counter][1] = $process
-		 $open[$open[0][0]+$counter][2] = 10
-		 $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
-		 $counter = $counter + 1
-		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
-		 If $process = $xy[$goal][6] Then
-			_ArrayDisplay($open)
-			msgbox(0,"","You've found the exit!")
-			Exit
-		 EndIf
-		 Sleep(50)
+	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
+		 UpdateOpen($process, $start)
+	  ElseIf  $start < ($grid_max - 15) And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+		 Add_open($start, $counter, $process)
 	  EndIf
    EndIf
 
    $process = $start - 1
-   ;ConsoleWrite($xy[$process][3] & " <-> " & $start & " <-> " & _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) & " <-> " & _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) & @CRLF)
    If $xy[$process][3] <> "x" Then
-	  If IsInt(($start / 15)+1) = 0 And $start <> 1 And _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) = -1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 $open[$open[0][0]+$counter][0] = Get_H($process, $goal)
-		 $open[$open[0][0]+$counter][1] = $process
-		 $open[$open[0][0]+$counter][2] = 10
-		 $open[$open[0][0]+$counter][3] = Get_H($closed[0][0], $process)
-		 $counter = $counter + 1
-		 GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
-		 If $process = $xy[$goal][6] Then
-			;_ArrayDisplay($open)
-			msgbox(0,"","You've found the exit!")
-			Exit
-		 EndIf
-		 Sleep(50)
+	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
+		 UpdateOpen($process, $start)
+	  ElseIf IsInt(($start / 15)+1) = 0 And $start <> 1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+		 Add_open($start, $counter, $process)
 	  EndIf
    EndIf
 
-   $open[0][0] = $open[0][0] + ($counter - 1) ; -1 wel goed??
+   $open[0][0] = $open[0][0] + ($counter - 1)
 EndFunc
 
+Func Add_open($parentid, ByRef $counter, $process)
+   $open[$open[0][0]+$counter][0] = Get_Distance($process, $goal)
+   $open[$open[0][0]+$counter][1] = $process ; grid $xy ID
+   $open[$open[0][0]+$counter][2] = Get_Distance($closed[0][0], $process)
+   $open[$open[0][0]+$counter][3] = 10
+   $open[$open[0][0]+$counter][4] = $parentid ; parentID
+   $counter = $counter + 1
 
+   GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
+   If $process = $xy[$goal][6] Then
+	  ;_ArrayDisplay($open)
+	  msgbox(0,"","You've found the exit!")
+	  Exit
+   EndIf
+   Sleep(50)
+EndFunc
 
-Func Get_H($start, $goal) ; H = 14 * y + 10 * (x-y)
+Func Get_Distance($start, $goal)
    Local $width = 0
    Local $height = 0
    Local $y = 0
@@ -394,11 +361,9 @@ Func Get_H($start, $goal) ; H = 14 * y + 10 * (x-y)
    EndIf
 
    Return $height + $width
-
 EndFunc
 
 Func Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
-
    If $startwidth < $goalwidth Then
 	  Return 10 * ($goalwidth - $startwidth)
    ElseIf $startwidth > $goalwidth Then
