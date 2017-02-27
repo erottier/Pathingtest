@@ -4,7 +4,7 @@
 #include <Array.au3>
 ;#include <GDIPlus.au3> ;_GDIPlus_GraphicsDrawRect ( $hGraphics, $nX, $nY, $nWidth, $nHeight [, $hPen = 0] )
 
-Local $grid_size = 15 ;How many squares in x and y axis
+Local $grid_size = 15 ;How many squares in x and y axis  !! mag niet groter worden dan 4000 !!!
 Local $grid_pixel = 20 ;How many pixels per square
 Global $grid_max = ($grid_size * $grid_size) + 1
 Local $xy[$grid_max][7]
@@ -207,10 +207,10 @@ Func startmap()
    Local $loc = 1
 
    $closed[0][0] = 0
-   $open[0][0] = 1
+   $open[0][0] = 1 ; = G-Cost
    $open[0][1] = "ID"
    $open[0][2] = "H-cost"
-   $open[0][3] = "G-cost"
+   $open[0][3] = "F-cost"
    $open[0][4] = "ParentID"
    $open[1][0] = Get_Distance($start, $goal)
    $open[1][1] = $start
@@ -225,7 +225,7 @@ Func startmap()
 	  EndIf
 		 Checkpath($start, $loc)
 	  ;_ArrayDisplay($open)
-		 $loc = _ArrayMinIndex($open, 1, 1, $open[0][0])
+		 $loc = _ArrayMinIndex($open, 1, 1, $open[0][0], 3)
 		 $start = $open[$loc][1]
 	  ;Next
    Until $open[$open[0][0]][0] = 0
@@ -288,30 +288,43 @@ EndFunc
 Func Add_open($parentid, ByRef $counter, $process)
    $open[$open[0][0]+$counter][0] = Get_Distance($process, $goal)
    $open[$open[0][0]+$counter][1] = $process ; grid $xy ID
-   $open[$open[0][0]+$counter][2] = Get_Distance($closed[0][0], $process)
-   $open[$open[0][0]+$counter][3] = 10
+   $open[$open[0][0]+$counter][2] = Get_Distance($closed[1][0], $process)
+   $open[$open[0][0]+$counter][3] = $open[$open[0][0]+$counter][0] + $open[$open[0][0]+$counter][2]
    $open[$open[0][0]+$counter][4] = $parentid ; parentID
    $counter = $counter + 1
-
    GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
    If $process = $xy[$goal][6] Then
-	  ;_ArrayDisplay($open)
+	  _ArrayDisplay($open)
 	  msgbox(0,"","You've found the exit!")
 	  Exit
    EndIf
-   Sleep(50)
+   Sleep(150)
 EndFunc
 
 Func Get_Distance($start, $goal)
-   Local $width = 0
-   Local $height = 0
-   Local $y = 0
-   Local $x = 0
+   Local $ydiff = 0
+   Local $xdiff = 0
+   Local $diag = 0
+   Local $hori = 0
    Local $goalheight = $xy[$goal][5] ; 5 = row
    Local $startheight = $xy[$start][5]
    Local $goalwidth = $xy[$goal][4] ; 4 = column
    Local $startwidth = $xy[$start][4]
 
+   $ydiff = Abs($goalheight - $startheight)
+   $xdiff = Abs($goalwidth - $startwidth)
+
+   If $xdiff > $ydiff Then
+	  $diag = $ydiff
+	  $hori = $xdiff - $ydiff
+   Else
+	  $diag = $xdiff
+	  $hori = $ydiff - $xdiff
+   EndIf
+
+   Return (14 * $diag) + (10 * $hori)
+
+#cs
    If $startwidth = $goalwidth Or $startheight = $goalheight Then Return Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
 
    If $goalwidth > $startwidth Then
@@ -361,6 +374,7 @@ Func Get_Distance($start, $goal)
    EndIf
 
    Return $height + $width
+
 EndFunc
 
 Func Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
@@ -375,6 +389,7 @@ Func Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
    ElseIf $startheight < $goalheight Then
 	  Return 10 * ($goalheight - $startheight)
    EndIf
+
 EndFunc
 
 ; Source: https://rosettacode.org/wiki/Greatest_common_divisor#AutoIt
@@ -388,3 +403,4 @@ Func _GCD($ia, $ib)
 		$ib = $imod
 	WEnd
 EndFunc   ;==>_GCD
+   #ce
