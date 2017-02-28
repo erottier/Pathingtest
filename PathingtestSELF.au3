@@ -201,21 +201,24 @@ Exit
 Func startmap()
    Dim $nodes[$grid_max]
    Global $open[$grid_max][5]
-   Global $closed[$grid_max][2]
+   Global $closed[$grid_max][3]
    Global $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
    Local $loc = 1
 
    $closed[0][0] = 0
+   $closed[0][1] = "ParentID"
+   $closed[0][2] = "F-cost"
    $open[0][0] = 1 ; = G-Cost
    $open[0][1] = "ID"
    $open[0][2] = "H-cost"
    $open[0][3] = "F-cost"
    $open[0][4] = "ParentID"
-   $open[1][0] = Get_Distance($start, $goal)
+   $open[1][0] = 0 ; Get_Distance($start, $goal)
    $open[1][1] = $start
    $open[1][2] = 0
    $open[1][3] = 0
+   $open[1][4] = 0
 
    ;For $i = 1 To 1000 ; safeguard for testing
    Do ; Main loop
@@ -224,11 +227,10 @@ Func startmap()
 		 ExitLoop
 	  EndIf
 		 Checkpath($start, $loc)
-	  ;_ArrayDisplay($open)
 		 $loc = _ArrayMinIndex($open, 1, 1, $open[0][0], 3)
 		 $start = $open[$loc][1]
 	  ;Next
-   Until $open[$open[0][0]][0] = 0
+   Until $open[$open[0][0]][3] = 0
 EndFunc
 
 Func UpdateOpen($process, $start) ; Update given open-cell with the new low cost AND parent
@@ -237,10 +239,10 @@ EndFunc
 
 Func Checkpath($start, $loc)
    Local $counter = 1
-   ;_ArrayDisplay($open)
    $closed[0][0] = $closed[0][0] + 1
    $closed[$closed[0][0]][0] = $start
    $closed[$closed[0][0]][1] = $open[$loc][4]
+   $closed[$closed[0][0]][2] = $open[$loc][0] ; $open[$loc][3]
    GUICtrlSetBkColor($xy[$open[$loc][1]][2], "0xff0000") ; RED col 2 = labelID
 
    _ArrayDelete($open, $loc)
@@ -251,7 +253,7 @@ Func Checkpath($start, $loc)
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
 		 UpdateOpen($process, $start)
 	  ElseIf $start > 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		Add_open($start, $counter, $process)
+		Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
    EndIf
 
@@ -260,7 +262,7 @@ Func Checkpath($start, $loc)
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
 		 UpdateOpen($process, $start)
 	  ElseIf IsInt($start / 15) = 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 Add_open($start, $counter, $process)
+		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
    EndIf
 
@@ -269,7 +271,7 @@ Func Checkpath($start, $loc)
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
 		 UpdateOpen($process, $start)
 	  ElseIf $start < ($grid_max - 15) And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 Add_open($start, $counter, $process)
+		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
    EndIf
 
@@ -278,19 +280,25 @@ Func Checkpath($start, $loc)
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
 		 UpdateOpen($process, $start)
 	  ElseIf IsInt(($start / 15)+1) = 0 And $start <> 1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		 Add_open($start, $counter, $process)
+		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
    EndIf
 
    $open[0][0] = $open[0][0] + ($counter - 1)
 EndFunc
 
-Func Add_open($parentid, ByRef $counter, $process)
-   $open[$open[0][0]+$counter][0] = Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
-   $open[$open[0][0]+$counter][1] = $process ; grid $xy ID
+Func Add_open($parentid, $startid, ByRef $counter, $process)
+   ;msgbox(0,"",$closed[$startid][2])
+   _ArrayDisplay($open)
+   ;_ArrayDisplay($closed)
+   $open[$open[0][0]+$counter][0] = $closed[$startid][2] ;Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
+   ;_ArrayDisplay($open)
+   $open[$open[0][0]+$counter][1] = $process
    $open[$open[0][0]+$counter][2] = Get_Distance($process, $goal)
    $open[$open[0][0]+$counter][3] = $open[$open[0][0]+$counter][0] + $open[$open[0][0]+$counter][2]
-   $open[$open[0][0]+$counter][4] = $parentid ; parentID
+   $open[$open[0][0]+$counter][4] = $parentid
+   ;_ArrayDisplay($open)
+   ;_ArrayDisplay($closed)
    $counter = $counter + 1
    GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
    If $process = $xy[$goal][6] Then
@@ -323,84 +331,4 @@ Func Get_Distance($start, $goal)
    EndIf
 
    Return (14 * $diag) + (10 * $hori)
-
-#cs
-   If $startwidth = $goalwidth Or $startheight = $goalheight Then Return Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
-
-   If $goalwidth > $startwidth Then
-	  If $goalheight > $startheight Then
-		 Do
-			$y = $y + 1
-		 Until $startwidth + $y = $goalwidth Or $startheight + $y = $goalheight
-		 $height = 14 * $y
-		 If $startwidth + $y = $goalwidth And $startheight + $y = $goalheight Then
-			;
-		 Else
-			$width = Check_straight($startwidth + $y, $goalwidth, $startheight + $y, $goalheight)
-		 EndIf
-	  Else
-		 Do
-			$y = $y + 1
-		 Until $startwidth + $y = $goalwidth Or $startheight - $y = $goalheight
-		 $height = 14 * $y
-		 If $startwidth + $y = $goalwidth And $startheight - $y = $goalheight Then
-			;
-		 Else
-			$width = Check_straight($startwidth + $y, $goalwidth, $startheight - $y, $goalheight)
-		 EndIf
-	  EndIf
-   Else
-	  If $goalheight > $startheight Then
-		 Do
-			$y = $y + 1
-		 Until $startwidth - $y = $goalwidth Or $startheight + $y = $goalheight
-		 $height = 14 * $y
-		 If $startwidth - $y = $goalwidth And $startheight + $y = $goalheight Then
-			;
-		 Else
-			$width = Check_straight($startwidth - $y, $goalwidth, $startheight + $y, $goalheight)
-		 EndIf
-	  Else
-		 Do
-			$y = $y + 1
-		 Until $startwidth - $y = $goalwidth Or $startheight - $y = $goalheight
-		 $height = 14 * $y
-		 If $startwidth - $y = $goalwidth And $startheight - $y = $goalheight Then
-			;
-		 Else
-			$width = Check_straight($startwidth - $y, $goalwidth, $startheight - $y, $goalheight)
-		 EndIf
-	  EndIf
-   EndIf
-
-   Return $height + $width
-
 EndFunc
-
-Func Check_straight($startwidth, $goalwidth, $startheight, $goalheight)
-   If $startwidth < $goalwidth Then
-	  Return 10 * ($goalwidth - $startwidth)
-   ElseIf $startwidth > $goalwidth Then
-	  Return 10 * ($startwidth - $goalwidth)
-   EndIf
-
-   If $startheight > $goalheight Then
-	  Return 10 * ($startheight - $goalheight)
-   ElseIf $startheight < $goalheight Then
-	  Return 10 * ($goalheight - $startheight)
-   EndIf
-
-EndFunc
-
-; Source: https://rosettacode.org/wiki/Greatest_common_divisor#AutoIt
-Func _GCD($ia, $ib)
-	;Local $ret = "GCD of " & $ia & " : " & $ib & " = "
-	Local $imod
-	While True
-		$imod = Mod($ia, $ib)
-		If $imod = 0 Then Return $ib ;ConsoleWrite($ret & $ib & @CRLF)
-		$ia = $ib
-		$ib = $imod
-	WEnd
-EndFunc   ;==>_GCD
-   #ce
