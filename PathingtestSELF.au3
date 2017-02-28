@@ -202,7 +202,7 @@ Func startmap()
    Dim $nodes[$grid_max]
    Global $open[$grid_max][5]
    Global $closed[$grid_max][2]
-   Local $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
+   Global $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
    Local $loc = 1
 
@@ -232,12 +232,12 @@ Func startmap()
 EndFunc
 
 Func UpdateOpen($process, $start) ; Update given open-cell with the new low cost AND parent
-   msgbox(0,"","test")
+   msgbox(0,"","Found this open tile again.")
 EndFunc
 
 Func Checkpath($start, $loc)
    Local $counter = 1
-
+   ;_ArrayDisplay($open)
    $closed[0][0] = $closed[0][0] + 1
    $closed[$closed[0][0]][0] = $start
    $closed[$closed[0][0]][1] = $open[$loc][4]
@@ -268,7 +268,7 @@ Func Checkpath($start, $loc)
    If $xy[$process][3] <> "x" Then
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
 		 UpdateOpen($process, $start)
-	  ElseIf  $start < ($grid_max - 15) And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
+	  ElseIf $start < ($grid_max - 15) And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
 		 Add_open($start, $counter, $process)
 	  EndIf
    EndIf
@@ -286,9 +286,9 @@ Func Checkpath($start, $loc)
 EndFunc
 
 Func Add_open($parentid, ByRef $counter, $process)
-   $open[$open[0][0]+$counter][0] = Get_Distance($process, $goal)
+   $open[$open[0][0]+$counter][0] = Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
    $open[$open[0][0]+$counter][1] = $process ; grid $xy ID
-   $open[$open[0][0]+$counter][2] = Get_Distance($closed[1][0], $process)
+   $open[$open[0][0]+$counter][2] = Get_Distance($process, $goal)
    $open[$open[0][0]+$counter][3] = $open[$open[0][0]+$counter][0] + $open[$open[0][0]+$counter][2]
    $open[$open[0][0]+$counter][4] = $parentid ; parentID
    $counter = $counter + 1
@@ -298,7 +298,7 @@ Func Add_open($parentid, ByRef $counter, $process)
 	  msgbox(0,"","You've found the exit!")
 	  Exit
    EndIf
-   Sleep(150)
+   Sleep(50)
 EndFunc
 
 Func Get_Distance($start, $goal)
