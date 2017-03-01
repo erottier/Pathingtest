@@ -222,11 +222,10 @@ Func startmap()
    $open[1][3] = 0
    $open[1][4] = 0
 
-   ; Set firstrun H-cost and F-cost
+   ; Set initial H-cost and F-cost for first iteration
    $open[1][2] = Get_Distance($start, $goal)
    $open[1][3] = $open[1][2]
 
-   ;For $i = 1 To 1000 ; safeguard for testing
    Do ; Main loop
 	  If $start = "" Then
 		 msgbox(0,"","$start is empty!")
@@ -235,12 +234,13 @@ Func startmap()
 	  Checkpath($start, $loc) ; firstrun $start = 17 and $loc = 1 (nodeID=17, open-list linenr=1)
 	  $loc = _ArrayMinIndex($open, 1, 1, $open[0][0], 3)
 	  $start = $open[$loc][1]
-	  ;Next
    Until $open[$open[0][0]][3] = 0
 EndFunc
 
-Func UpdateOpen($process, $start) ; Update given open-cell with the new low cost AND parent
-   msgbox(0,"","Found this open tile again.")
+Func UpdateOpen($openrownr, $closedrownr, $parentid) ; Update given open-cell with the new low cost AND parent
+   $open[$openrownr][0] = $closed[$closedrownr][3] + 10 ; Update g-cost
+   $open[$openrownr][3] = $open[$openrownr][0] + $open[$openrownr][2] ; Update f-cost
+   $open[$openrownr][4] = $parentid ; update parentID
 EndFunc
 
 Func Checkpath($start, $loc)
@@ -259,16 +259,16 @@ Func Checkpath($start, $loc)
    $process = $start - 15
    If $xy[$process][3] <> "x" Then
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
-		 UpdateOpen($process, $start)
+		 UpdateOpen($xy[$process][5], $closed[0][0], $start)
 	  ElseIf $start > 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
-		Add_open($start, $closed[0][0], $counter, $process)
+		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
    EndIf
 
    $process = $start + 1
    If $xy[$process][3] <> "x" Then
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
-		 UpdateOpen($process, $start)
+		 UpdateOpen($xy[$process][5], $closed[0][0], $start)
 	  ElseIf IsInt($start / 15) = 0 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
 		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
@@ -277,7 +277,7 @@ Func Checkpath($start, $loc)
    $process = $start + 15
    If $xy[$process][3] <> "x" Then
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
-		 UpdateOpen($process, $start)
+		 UpdateOpen($xy[$process][5], $closed[0][0], $start)
 	  ElseIf $start < ($grid_max - 15) And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
 		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
@@ -286,7 +286,7 @@ Func Checkpath($start, $loc)
    $process = $start - 1
    If $xy[$process][3] <> "x" Then
 	  If _ArraySearch($open, $process, 1, $open[0][0], 0, 0, 1, 1) <> -1 Then
-		 UpdateOpen($process, $start)
+		 UpdateOpen($xy[$process][5], $closed[0][0], $start)
 	  ElseIf IsInt(($start / 15)+1) = 0 And $start <> 1 And _ArraySearch($closed, $process, 1, $closed[0][0], 0, 0, 1, 0) = -1 Then
 		 Add_open($start, $closed[0][0], $counter, $process)
 	  EndIf
@@ -296,21 +296,14 @@ Func Checkpath($start, $loc)
 EndFunc
 
 Func Add_open($parentid, $startid, ByRef $counter, $process)
-   ;msgbox(0,"",$closed[$startid][2])
-   ;_ArrayDisplay($open)
-   _ArrayDisplay($closed)
-   $open[$open[0][0]+$counter][0] = $closed[$startid][2] + 10 ;Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
+   $open[$open[0][0]+$counter][0] = $closed[$startid][3] + 10 ; + 10 omdat er nooit diagonaal verplaatst gaat worden, hoeven we ook niet te checken :)
    $open[$open[0][0]+$counter][1] = $process
    $open[$open[0][0]+$counter][2] = Get_Distance($process, $goal)
    $open[$open[0][0]+$counter][3] = $open[$open[0][0]+$counter][0] + $open[$open[0][0]+$counter][2]
    $open[$open[0][0]+$counter][4] = $parentid
-   ;if $open[$open[0][0]+$counter][1] = 58 Then _ArrayDisplay($open)
-   ;_ArrayDisplay($open)
-   ;_ArrayDisplay($closed)
    $counter = $counter + 1
    GUICtrlSetBkColor($xy[$process][2], "0x00ff00") ; GREEN
    If $process = $xy[$goal][6] Then
-	  _ArrayDisplay($open)
 	  msgbox(0,"","You've found the exit!")
 	  Exit
    EndIf
