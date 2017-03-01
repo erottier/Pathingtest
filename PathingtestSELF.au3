@@ -322,6 +322,7 @@ Func Get_Distance($start, $goal)
    $ydiff = Abs($goalheight - $startheight)
    $xdiff = Abs($goalwidth - $startwidth)
 
+   ; Code gedestilleerd uit formules Bastiaan
    If $xdiff > $ydiff Then
 	  $diag = $ydiff
 	  $hori = $xdiff - $ydiff
