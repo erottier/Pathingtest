@@ -201,14 +201,16 @@ Exit
 Func startmap()
    Dim $nodes[$grid_max]
    Global $open[$grid_max][5]
-   Global $closed[$grid_max][3]
+   Global $closed[$grid_max][5]
    Global $start = _ArraySearch($xy, "s", 0, 0, 0, 0, 1, 3) ;$start = (row) 17
    Global $goal = _ArraySearch($xy, "g", 0, 0, 0, 0, 1, 3)
-   Local $loc = 1
+   Local $loc = 1 ; $open array line-number to check for lowest F-cost nodeID
 
    $closed[0][0] = 0
    $closed[0][1] = "ParentID"
    $closed[0][2] = "F-cost"
+   $closed[0][3] = "G-cost"
+   $closed[0][4] = "H-cost"
    $open[0][0] = 1 ; = G-Cost
    $open[0][1] = "ID"
    $open[0][2] = "H-cost"
@@ -220,15 +222,19 @@ Func startmap()
    $open[1][3] = 0
    $open[1][4] = 0
 
+   ; Set firstrun H-cost and F-cost
+   $open[1][2] = Get_Distance($start, $goal)
+   $open[1][3] = $open[1][2]
+
    ;For $i = 1 To 1000 ; safeguard for testing
    Do ; Main loop
 	  If $start = "" Then
 		 msgbox(0,"","$start is empty!")
 		 ExitLoop
 	  EndIf
-		 Checkpath($start, $loc)
-		 $loc = _ArrayMinIndex($open, 1, 1, $open[0][0], 3)
-		 $start = $open[$loc][1]
+	  Checkpath($start, $loc) ; firstrun $start = 17 and $loc = 1 (nodeID=17, open-list linenr=1)
+	  $loc = _ArrayMinIndex($open, 1, 1, $open[0][0], 3)
+	  $start = $open[$loc][1]
 	  ;Next
    Until $open[$open[0][0]][3] = 0
 EndFunc
@@ -242,7 +248,9 @@ Func Checkpath($start, $loc)
    $closed[0][0] = $closed[0][0] + 1
    $closed[$closed[0][0]][0] = $start
    $closed[$closed[0][0]][1] = $open[$loc][4]
-   $closed[$closed[0][0]][2] = $open[$loc][0] ; $open[$loc][3]
+   $closed[$closed[0][0]][2] = $open[$loc][3] ; F-cost
+   $closed[$closed[0][0]][3] = $open[$loc][0] ; G-cost
+   $closed[$closed[0][0]][4] = $open[$loc][2] ; H-cost
    GUICtrlSetBkColor($xy[$open[$loc][1]][2], "0xff0000") ; RED col 2 = labelID
 
    _ArrayDelete($open, $loc)
@@ -289,14 +297,14 @@ EndFunc
 
 Func Add_open($parentid, $startid, ByRef $counter, $process)
    ;msgbox(0,"",$closed[$startid][2])
-   _ArrayDisplay($open)
-   ;_ArrayDisplay($closed)
-   $open[$open[0][0]+$counter][0] = $closed[$startid][2] ;Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
    ;_ArrayDisplay($open)
+   _ArrayDisplay($closed)
+   $open[$open[0][0]+$counter][0] = $closed[$startid][2] + 10 ;Get_Distance($closed[1][0], $process) ; $start = vorige node, $closed[1][0] = start node - vandaar de closed ipv start...
    $open[$open[0][0]+$counter][1] = $process
    $open[$open[0][0]+$counter][2] = Get_Distance($process, $goal)
    $open[$open[0][0]+$counter][3] = $open[$open[0][0]+$counter][0] + $open[$open[0][0]+$counter][2]
    $open[$open[0][0]+$counter][4] = $parentid
+   ;if $open[$open[0][0]+$counter][1] = 58 Then _ArrayDisplay($open)
    ;_ArrayDisplay($open)
    ;_ArrayDisplay($closed)
    $counter = $counter + 1
