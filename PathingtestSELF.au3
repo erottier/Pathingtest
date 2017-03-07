@@ -6,7 +6,7 @@
 
 Local $grid_size = 15 ;How many squares in x and y axis  !! mag niet groter worden dan 4000 !!!
 Local $grid_pixel = 20 ;How many pixels per square
-Global $grid_max = ($grid_size * $grid_size) + 1
+Local $grid_max = ($grid_size * $grid_size) + 1
 Local $xy[$grid_max][7]
 Local $row
 Local $col
@@ -58,14 +58,12 @@ $xy[0][5] = "row"
 Local $squarenr = 0
 For $i = 0 To ($grid_size * $grid_pixel) - $grid_pixel Step $grid_pixel
    For $j = 0 To ($grid_size * $grid_pixel) - $grid_pixel Step $grid_pixel
-	  ;_GDIPlus_GraphicsDrawRect($hGraphics, 150 + $j, 50 + $i, 50, 50, $hPen)
-	  $xy[$squarenr + 1][2] = GUICtrlCreateLabel("x", 150 + $J, 50 + $i, $grid_pixel, $grid_pixel, $SS_SUNKEN)
+	  $xy[$squarenr + 1][2] = GUICtrlCreateLabel("x", 150 + $J, 50 + $i, $grid_pixel, $grid_pixel, BitOr($SS_SUNKEN, $SS_CENTER))
 	  $xy[$squarenr + 1][3] = $data[Int($i)/$grid_pixel][int($j)/$grid_pixel]
 	  GUICtrlSetBkColor(-1, 0xeeeeee) ; GUICtrlSetBkColor(-1, 0x44AA44)
 	  $xy[$squarenr + 1][0] = 150 + $j
 	  $xy[$squarenr + 1][1] = $grid_pixel + $i
 	  $row = Floor($squarenr / $grid_size)
-	  ;$col = $squarenr - ($row * $grid_size)
 	  $col = Mod($squarenr, $grid_size)
 	  $xy[$squarenr + 1][4] = $col
 	  $xy[$squarenr + 1][5] = $row
@@ -77,7 +75,6 @@ Next
 Local $pathing = StringSplit("16,17,18,21,23,25,31,33,36,38,40,46,48,51,53,55,57,58,61,63,64,65,66,67,68,69,70,71,72,76,87,91,92,93,102,107,111,113,114,115,117,122,123,124,126,128,130,132,137,139,141,143,145,147,152,154,155,156,158,160,162,163,166,167,169,173,175,177,181,184,188,190,191,192,196,199,200,201,202,203,205", ",")
 For $i = 1 To UBound($pathing) - 1
    $row = Floor($pathing[$i] / $grid_size)
-   ;$col = $pathing[$i] - ($row * $grid_size)
    $col = Mod($pathing[$i], $grid_size)
    $data[$row][$col] = "o"
    $xy[$pathing[$i] + 1][3] = "o"
@@ -93,10 +90,7 @@ If $debug = 1 Then
    $data[11][10] = "g"
    $xy[176][3] = "g"
    GUICtrlSetData($xy[176][2], "g")
-   ;_ArrayDisplay($data)
 EndIf
-
-;$human1 = GUICtrlCreateLabel("1", 170, 70, 7, 12)
 
 GUISwitch($gui)
 GUISetState(@SW_SHOW)
