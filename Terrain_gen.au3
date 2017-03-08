@@ -99,7 +99,7 @@ Func make_maze()
    open_maze($curpos)
 
    Do
-	  $heading = direction($curpos, 0)
+	  $heading = direction($curpos, $backtrack)
 	  Switch $heading
 		 Case 1 ; north
 			open_maze($curpos - $width)
@@ -126,77 +126,71 @@ Func open_maze($dest)
 EndFunc
 
 ; Get the random _possible_ direction here by inputting your current location ID
-Func direction($curpos, $lastpos)
+Func direction($curpos, ByRef $backtrack)
    Local $dest
    Local $nesw
    Local $rand_result[5]
 
-   $rand_result[0] = 0
-
    Do
+	  $rand_result[0] = 0
 
-	  $dest = $curpos - ($width * 2)
-	  If $dest < $width + 2 Then
-		 $dest = 0
+	  $north = $curpos - ($width * 2)
+	  If $north < $width + 2 Then
+		 $north = 0
+	  ElseIf $xy[$north][4] = "o" Then
+		 $north = 0
 	  Else
 		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = $dest
+		 $rand_result[$rand_result[0]] = 1 ;$north
 	  EndIf
 
-	  $dest = $curpos + 2
-	  If mod($dest, $width) = 1 Then
-		 $dest = 0
+	  $east = $curpos + 2
+	  If mod($east, $width) = 1 Then
+		 $east = 0
+	  ElseIf $xy[$east][4] = "o" Then
+		 $east = 0
 	  Else
 		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = $dest
+		 $rand_result[$rand_result[0]] = 2 ;$east
 	  EndIf
 
-	  $dest = $curpos + ($width * 2)
-	  If $dest > $grid_size - ($width - 2) Then
-		 $dest = 0
+	  $south = $curpos + ($width * 2)
+	  If $south > $grid_size - ($width + 2) Then
+		 $south = 0
+	  ElseIf $xy[$south][4] = "o" Then
+		 $south = 0
 	  Else
 		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = $dest
+		 $rand_result[$rand_result[0]] = 3 ;$south
 	  EndIf
 
-	  $dest = $curpos - 2
-	  If mod($dest, $width) = 0 Then
-		 $dest = 0
+	  $west = $curpos - 2
+	  If mod($west, $width) = 0 Then
+		 $west = 0
+	  ElseIf $xy[$west][4] = "o" Then
+		 $west = 0
 	  Else
 		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = $dest
+		 $rand_result[$rand_result[0]] = 4 ;$west
 	  EndIf
-;msgbox(0,"",$nesw)
+
 	  If $rand_result[0] = 0 Then
 		 $nesw = 0
 	  ElseIf $rand_result[0] = 1 Then
+		 $backtrack[0] += 1
+		 _ArrayAdd($backtrack, $curpos)
 		 $nesw = $rand_result[$rand_result[0]]
 	  Else
-		 $nesw = Random(1, $rand_result[0], 1) ; 1=north, 2=east, 3=south, 4=west
+		 $backtrack[0] += 1
+		 _ArrayAdd($backtrack, $curpos)
+		 $nesw = $rand_result[Random(1, $rand_result[0], 1)]
 	  EndIf
-;msgbox(0,"",$nesw)
-	  #cs
-	  ; !!!!!!!!!!!!
-	  ; !!!!!!!!!!!! Eerst kijken welke kanten ik op kan, en daarna pas met die aantallen de random bepalen (omdraaien dus) !!!!!!!!!!!!!!!!!!
-	  ; !!!!!!!!!!!!
-	  Do
-		 $nesw = Random(1, 4, 1) ; 1=north, 2=east, 3=south, 4=west
-	  Until $nesw <> $lastpos
-	  If $nesw = 1 Then ; north
-		 $dest = $curpos - ($width * 2)
-		 If $dest < $width + 2 Then $dest = 0
-	  ElseIf $nesw = 2 Then ; east
-		 $dest = $curpos + 2
-		 If mod($dest, $width) = 1 Then $dest = 0
-	  ElseIf $nesw = 3 Then ; south
-		 $dest = $curpos + ($width * 2)
-		 If $dest > $grid_size - ($width - 2) Then $dest = 0
-	  ElseIf $nesw = 4 Then ; west
-		 $dest = $curpos - 2
-		 If mod($dest, $width) = 0 Then $dest = 0
+
+	  If $nesw = 0 And $backtrack[0] > 0 then
+		 $curpos = $backtrack[$backtrack[0]]
+		 _ArrayDelete($backtrack, $backtrack[0])
+		 $backtrack[0] -= 1
 	  EndIf
-	  If $xy[$dest][4] = "o" Then $nesw = 0
-	  #ce
 
    Until $nesw <> 0
 
