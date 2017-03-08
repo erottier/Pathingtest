@@ -1,11 +1,8 @@
 #cs ----------------------------------------------------------------------------
-
  AutoIt Version: 3.3.12.0
  Author:         myName
-
  Script Function:
 	Template AutoIt script.
-
 #ce ----------------------------------------------------------------------------
 
 ; Script Start - Add your code below here
@@ -131,17 +128,53 @@ EndFunc
 ; Get the random _possible_ direction here by inputting your current location ID
 Func direction($curpos, $lastpos)
    Local $dest
+   Local $nesw
+   Local $rand_result[5]
+
+   $rand_result[0] = 0
+
    Do
 
-	  $north = $dest = $curpos - ($width * 2)
-		 If $north < $width + 2 Then $dest = 0
-	  $east = $curpos + 2
-		 If mod($east, $width) = 1 Then $dest = 0
-	  $south = $curpos + ($width * 2)
-		 If $south > $grid_size - ($width - 2) Then $dest = 0
-	  $west = $curpos - 2
-		 If mod($west, $width) = 0 Then $dest = 0
+	  $dest = $curpos - ($width * 2)
+	  If $dest < $width + 2 Then
+		 $dest = 0
+	  Else
+		 $rand_result[0] += 1
+		 $rand_result[$rand_result[0]] = $dest
+	  EndIf
 
+	  $dest = $curpos + 2
+	  If mod($dest, $width) = 1 Then
+		 $dest = 0
+	  Else
+		 $rand_result[0] += 1
+		 $rand_result[$rand_result[0]] = $dest
+	  EndIf
+
+	  $dest = $curpos + ($width * 2)
+	  If $dest > $grid_size - ($width - 2) Then
+		 $dest = 0
+	  Else
+		 $rand_result[0] += 1
+		 $rand_result[$rand_result[0]] = $dest
+	  EndIf
+
+	  $dest = $curpos - 2
+	  If mod($dest, $width) = 0 Then
+		 $dest = 0
+	  Else
+		 $rand_result[0] += 1
+		 $rand_result[$rand_result[0]] = $dest
+	  EndIf
+;msgbox(0,"",$nesw)
+	  If $rand_result[0] = 0 Then
+		 $nesw = 0
+	  ElseIf $rand_result[0] = 1 Then
+		 $nesw = $rand_result[$rand_result[0]]
+	  Else
+		 $nesw = Random(1, $rand_result[0], 1) ; 1=north, 2=east, 3=south, 4=west
+	  EndIf
+;msgbox(0,"",$nesw)
 	  #cs
 	  ; !!!!!!!!!!!!
 	  ; !!!!!!!!!!!! Eerst kijken welke kanten ik op kan, en daarna pas met die aantallen de random bepalen (omdraaien dus) !!!!!!!!!!!!!!!!!!
@@ -149,7 +182,6 @@ Func direction($curpos, $lastpos)
 	  Do
 		 $nesw = Random(1, 4, 1) ; 1=north, 2=east, 3=south, 4=west
 	  Until $nesw <> $lastpos
-
 	  If $nesw = 1 Then ; north
 		 $dest = $curpos - ($width * 2)
 		 If $dest < $width + 2 Then $dest = 0
@@ -163,7 +195,6 @@ Func direction($curpos, $lastpos)
 		 $dest = $curpos - 2
 		 If mod($dest, $width) = 0 Then $dest = 0
 	  EndIf
-
 	  If $xy[$dest][4] = "o" Then $nesw = 0
 	  #ce
 
