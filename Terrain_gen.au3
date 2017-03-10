@@ -92,7 +92,9 @@ Exit
 ; Main function
 Func make_maze()
    Global $curpos
-   global $backtrack[1]
+   Global $backtrack[1]
+   Global $bt = 0
+
    Local $heading
 
    $backtrack[0] = 0
@@ -101,35 +103,35 @@ Func make_maze()
    open_maze($curpos)
 
    While 1
-	  $heading = direction($curpos, 0)
+	  Do
+		 $heading = direction($curpos)
+	  Until $heading <> 0
+	  If $bt = 1 Then $bt = 0
+
 	  If $heading = -1 Then ExitLoop
 
 	  Switch $heading
 		 Case 1 ; north
-		 ConsoleWrite("Curpos 1: " & $curpos&@CRLF)
 			open_maze($curpos - $width)
 			open_maze($curpos - ($width * 2))
 			$curpos = $curpos - ($width * 2)
 		 Case 2 ; east
-			ConsoleWrite("Curpos 2: " & $curpos&@CRLF)
 			open_maze($curpos + 1)
 			open_maze($curpos + 2)
 			$curpos = $curpos + 2
 		 Case 3 ; south
-			ConsoleWrite("Curpos 3: " & $curpos&@CRLF)
 			open_maze($curpos + $width)
 			open_maze($curpos + ($width * 2))
 			$curpos = $curpos + ($width * 2)
 		 Case 4 ; west
-			ConsoleWrite("Curpos 4: " & $curpos&@CRLF)
 			open_maze($curpos - 1)
 			open_maze($curpos - 2)
 			$curpos = $curpos - 2
 		 EndSwitch
-		 msgbox(0,"","pause")
-   WEnd ;Until $backtrack[0] = -1
+		 ;msgbox(0,"","Turn pause")
+   WEnd
 
-   ConsoleWrite("Ending")
+   ConsoleWrite("Maze completed.")
    Return
 EndFunc
 
@@ -139,8 +141,8 @@ Func open_maze($dest)
    GUICtrlSetBkColor($xy[$dest][0], 0xEEEEEE)
 EndFunc
 
-Func direction(ByRef $curpos, $bt) ;$bt = backtrack-tracking; 1=backtrack entry, 0=normal entry
-   Local $tempbt
+Func direction(ByRef $curpos) ;$bt = backtrack-tracking; 1=backtrack entry, 0=normal entry
+   Local $temp
    Local $nesw
    Local $rand_result[5][2]
 
@@ -165,23 +167,23 @@ Func direction(ByRef $curpos, $bt) ;$bt = backtrack-tracking; 1=backtrack entry,
 	  EndIf
    Next
 
-   If $rand_result[0][0] >= 2 Then
-	  $backtrack[0] += 1
-	  _ArrayAdd($backtrack, $curpos)
-	  Return $rand_result[Random(1, $rand_result[0][0], 1)][0]
-   ElseIf $rand_result[0][0] = 1 Then
-	  consolewrite("one result: "& $rand_result[1][0]& " curpos: " & $curpos & @CRLF)
-	  Return $rand_result[1][0]
-   EndIf
-
-   If $backtrack[0] > 0 Then
-	  $tempbt = $backtrack[$backtrack[0]]
+   If $rand_result[0][0] > 0 Then
+	  If $rand_result[0][0] = 1 Then
+		 Return $rand_result[1][0]
+	  Else
+		 If $bt = 0 Then
+			$backtrack[0] += 1
+			_ArrayAdd($backtrack, $curpos)
+		 EndIf
+		 $temp = $rand_result[Random(1, $rand_result[0][0], 1)][0]
+		 Return $temp
+	  EndIf
+   ElseIf $backtrack[0] > 0 Then
+	  $curpos = $backtrack[$backtrack[0]]
 	  _ArrayDelete($backtrack, $backtrack[0])
 	  $backtrack[0] -= 1
-	  ConsoleWrite("tempBT: " & $tempbt&@CRLF)
-	  $debug = direction($tempbt, 1)
-	  ConsoleWrite("Debug: " &$debug&", curpos: "&$curpos &@CRLF)
-	  Return $debug
+	  $bt = 1
+	  Return 0
    Else
 	  Return -1
    EndIf
