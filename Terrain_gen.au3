@@ -13,8 +13,8 @@
 #include <StaticConstants.au3>
 
 ; Set various variables
-Global $height = 5
-Global $width = 5
+Global $height = 11
+Global $width = 11
 Global $grid_size = $height * $width
 Local $grid_pixel = 40 ;How many pixels per square
 
@@ -58,8 +58,8 @@ Local $iOKButton = GUICtrlCreateButton("OK", 70, 50, 60)
 Local $squarenr = 0
 For $i = 0 To ($height * $grid_pixel) - $grid_pixel Step $grid_pixel ; Row
    For $j = 0 To ($width * $grid_pixel) - $grid_pixel Step $grid_pixel ; Column
-	  $xy[$squarenr + 1][0] = GUICtrlCreateLabel("x", 150 + $j, 50 + $i, $grid_pixel, $grid_pixel, BitOr($SS_SUNKEN, $SS_CENTER))
-	  GUICtrlSetBkColor($xy[$squarenr + 1][0], 0x000000) ; GUICtrlSetBkColor(-1, 0xeeeeee) ; GUICtrlSetBkColor(-1, 0x44AA44)
+	  $xy[$squarenr + 1][0] = GUICtrlCreateLabel($squarenr+1, 150 + $j, 50 + $i, $grid_pixel, $grid_pixel, BitOr($SS_SUNKEN, $SS_CENTER))
+	  GUICtrlSetBkColor($xy[$squarenr + 1][0], 0x5E87C9) ; GUICtrlSetBkColor(-1, 0xeeeeee) ; GUICtrlSetBkColor(-1, 0x44AA44)
 	  $xy[$squarenr + 1][1] = $squarenr + 1
 	  $xy[$squarenr + 1][2] = ($i / $grid_pixel) + 1
 	  $xy[$squarenr + 1][3] = ($j / $grid_pixel) + 1
@@ -78,6 +78,7 @@ While 1
    $aMsg = GUIGetMsg(1)
    Select
 	  Case $aMsg[0] = $iOKButton
+		 GUICtrlSetState($iOKButton, $GUI_DISABLE)
 		 make_maze()
 
 	  Case $aMsg[0] = $GUI_EVENT_CLOSE And $aMsg[1] = $gui
@@ -90,114 +91,105 @@ Exit
 
 ; Main function
 Func make_maze()
+   Global $curpos
+   global $backtrack[1]
    Local $heading
-   Local $backtrack[1]
 
    $backtrack[0] = 0
    $curpos = $width + 2
 
    open_maze($curpos)
 
-   Do
-	  $heading = direction($curpos, $backtrack)
+   While 1
+	  $heading = direction($curpos, 0)
+	  If $heading = -1 Then ExitLoop
+
 	  Switch $heading
 		 Case 1 ; north
+		 ConsoleWrite("Curpos 1: " & $curpos&@CRLF)
 			open_maze($curpos - $width)
 			open_maze($curpos - ($width * 2))
+			$curpos = $curpos - ($width * 2)
 		 Case 2 ; east
+			ConsoleWrite("Curpos 2: " & $curpos&@CRLF)
 			open_maze($curpos + 1)
 			open_maze($curpos + 2)
+			$curpos = $curpos + 2
 		 Case 3 ; south
+			ConsoleWrite("Curpos 3: " & $curpos&@CRLF)
 			open_maze($curpos + $width)
 			open_maze($curpos + ($width * 2))
+			$curpos = $curpos + ($width * 2)
 		 Case 4 ; west
+			ConsoleWrite("Curpos 4: " & $curpos&@CRLF)
 			open_maze($curpos - 1)
 			open_maze($curpos - 2)
-	  EndSwitch
-   Until $backtrack[0] = 0
+			$curpos = $curpos - 2
+		 EndSwitch
+		 msgbox(0,"","pause")
+   WEnd ;Until $backtrack[0] = -1
 
+   ConsoleWrite("Ending")
    Return
 EndFunc
 
 Func open_maze($dest)
    $xy[$dest][4] = "o"
-   GUICtrlSetData($xy[$dest][0], "o")
+   GUICtrlSetData($xy[$dest][0], $dest) ;
    GUICtrlSetBkColor($xy[$dest][0], 0xEEEEEE)
 EndFunc
 
-; Get the random _possible_ direction here by inputting your current location ID
-Func direction($curpos, ByRef $backtrack)
-   Local $dest
+Func direction(ByRef $curpos, $bt) ;$bt = backtrack-tracking; 1=backtrack entry, 0=normal entry
+   Local $tempbt
    Local $nesw
-   Local $rand_result[5]
+   Local $rand_result[5][2]
 
-   Do
-	  $rand_result[0] = 0
+   $rand_result[0][0] = 0
 
-	  $north = $curpos - ($width * 2)
-	  If $north < $width + 2 Then
-		 $north = 0
-	  ElseIf $xy[$north][4] = "o" Then
-		 $north = 0
-	  Else
-		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = 1 ;$north
+   $nesw = $curpos - ($width * 2) ; north
+   If $nesw > $width + 1 Then fill_rand_result($nesw, 1, $rand_result)
+
+   $nesw = $curpos + 2 ; east
+   If mod($nesw - 1, $width) <> 0 Then fill_rand_result($nesw, 2, $rand_result)
+
+   $nesw = $curpos + ($width * 2) ; south
+   If $nesw < $grid_size - $width Then fill_rand_result($nesw, 3, $rand_result)
+
+   $nesw = $curpos - 2 ; west
+   If mod($nesw, $width) <> 0 Then fill_rand_result($nesw, 4, $rand_result)
+
+   For $i = $rand_result[0][0] To 1 Step -1
+	  If $xy[$rand_result[$i][1]][4] = "o" Then
+		 $rand_result[0][0] -= 1
+		 _ArrayDelete($rand_result, $i)
 	  EndIf
+   Next
 
-	  $east = $curpos + 2
-	  If mod($east, $width) = 1 Then
-		 $east = 0
-	  ElseIf $xy[$east][4] = "o" Then
-		 $east = 0
-	  Else
-		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = 2 ;$east
-	  EndIf
+   If $rand_result[0][0] >= 2 Then
+	  $backtrack[0] += 1
+	  _ArrayAdd($backtrack, $curpos)
+	  Return $rand_result[Random(1, $rand_result[0][0], 1)][0]
+   ElseIf $rand_result[0][0] = 1 Then
+	  consolewrite("one result: "& $rand_result[1][0]& " curpos: " & $curpos & @CRLF)
+	  Return $rand_result[1][0]
+   EndIf
 
-	  $south = $curpos + ($width * 2)
-	  If $south > $grid_size - ($width + 2) Then
-		 $south = 0
-	  ElseIf $xy[$south][4] = "o" Then
-		 $south = 0
-	  Else
-		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = 3 ;$south
-	  EndIf
-
-	  $west = $curpos - 2
-	  If mod($west, $width) = 0 Then
-		 $west = 0
-	  ElseIf $xy[$west][4] = "o" Then
-		 $west = 0
-	  Else
-		 $rand_result[0] += 1
-		 $rand_result[$rand_result[0]] = 4 ;$west
-	  EndIf
-
-	  If $rand_result[0] = 0 Then
-		 $nesw = 0
-	  ElseIf $rand_result[0] = 1 Then
-		 $backtrack[0] += 1
-		 _ArrayAdd($backtrack, $curpos)
-		 $nesw = $rand_result[$rand_result[0]]
-	  Else
-		 $backtrack[0] += 1
-		 _ArrayAdd($backtrack, $curpos)
-		 $nesw = $rand_result[Random(1, $rand_result[0], 1)]
-	  EndIf
-
-	  If $nesw = 0 And $backtrack[0] > 0 then
-		 $curpos = $backtrack[$backtrack[0]]
-		 _ArrayDelete($backtrack, $backtrack[0])
-		 $backtrack[0] -= 1
-	  EndIf
-
-   Until $nesw <> 0
-
-   Return $nesw
+   If $backtrack[0] > 0 Then
+	  $tempbt = $backtrack[$backtrack[0]]
+	  _ArrayDelete($backtrack, $backtrack[0])
+	  $backtrack[0] -= 1
+	  ConsoleWrite("tempBT: " & $tempbt&@CRLF)
+	  $debug = direction($tempbt, 1)
+	  ConsoleWrite("Debug: " &$debug&", curpos: "&$curpos &@CRLF)
+	  Return $debug
+   Else
+	  Return -1
+   EndIf
 EndFunc
 
-;Func check_dest($dest) ; check destination for searched path, return true for possible way, false for no-go
-   ;If $xy[$dest][4] = "x" Then Return True
-   ;Return False
-;EndFunc
+Func fill_rand_result($nesw, $direction, ByRef $rand_result)
+   $rand_result[0][0] += 1
+   $rand_result[$rand_result[0][0]][1] = $nesw
+   $rand_result[$rand_result[0][0]][0] = $direction
+   Return
+EndFunc
