@@ -11,7 +11,7 @@
 ; Script Start - Add your code below here
 
 ; Main function
-Func make_maze( $guion = $false)
+Func make_maze()
    Local $heading
    Local $stepcount = $numberofsteps ; Reset the step counter.
    Local $timed = TimerInit() ; Start the timer to see how long the maze generation took.
