@@ -8,10 +8,57 @@
 
 #ce ----------------------------------------------------------------------------
 
+#include <Array.au3>
+#include <GUIConstantsEx.au3>
+#include <StaticConstants.au3>
+
 ; Script Start - Add your code below here
 
-; Main function
-Func make_maze()
+; Initialize required maze variables and grid array. Returns 1 when an error occurred and 0 when all's good.
+Func init_maze()
+   Global $GUIenabled = False
+
+   ; width and height must be odd numbers to have a closed, functioning maze.
+   Global $height = 27 ; demo height = 27
+   Global $width = 43; demo width = 43
+
+   ; Check if width & height are an odd number (to get the outer edge an odd number is required)
+   If mod($height, 2) = 0 Or $height < 5 Then
+	  ;msgbox(0,"","Height is not an odd number or a minimum of 5 tall !")
+	  Return 1
+	  ;Exit
+   ElseIf mod($width, 2) = 0 Or $width < 5 Then
+	  ;msgbox(0,"","Width is not an odd number of a minimum of 5 wide !")
+	  Return 1
+	  ;Exit
+   EndIf
+
+   Global $grid_size = $height * $width
+   Global $numberofsteps = (Ceiling(($height-2) / 2) * (($width-2) - Ceiling(($width-2) / 2))) + (($height-2) - Ceiling(($height-2) / 2)) ; long formula to check the number of steps this maze will take, this is a mathematical given with a fixed number of cells. And yes, I am aware I'm taking a shortcut in this formula. ;)
+
+   Global $curpos
+   Global $backtrack[1]
+   Global $bt = 0
+
+   ; Initialize main array with all grid data
+   Global $xy[$grid_size + 1][5]
+   Global $reset_xy = $xy ; set the reset array
+   $xy[0][0] = $grid_size ; first entry is the total number of nodes, rest is set with a header name for easy reference in _ArrayDisplay if needed.
+   $xy[0][1] = "ID"
+   $xy[0][2] = "Row"
+   $xy[0][3] = "Column"
+   $xy[0][4] = "Type"
+
+   ; Fill the grid array with 'walls'
+   For $i = 1 To $xy[0][0]
+	  $xy[$i][4] = "x"
+   Next
+
+   Return 0
+EndFunc
+
+; Main function - set if GUI used true or false
+Func make_maze($GUIenabled)
    Local $heading
    Local $stepcount = $numberofsteps ; Reset the step counter.
    Local $timed = TimerInit() ; Start the timer to see how long the maze generation took.
@@ -28,8 +75,8 @@ Func make_maze()
       Until $heading <> 0
       If $bt = 1 Then $bt = 0 ; reset backtracking-tracker, else the backtracking array keeps adding the current position
 
-      GUICtrlSetData($progress, "Running - Creating maze. Please stand by... " & $stepcount & " steps to go.")
-      Sleep(50) ; Slow maze creation down to look at it - relax! (or don't and comment out the sleep)
+      If $GUIenabled = True Then GUICtrlSetData($progress, "Running - Creating maze. Please stand by... " & $stepcount & " steps to go.")
+      ;Sleep(50) ; Slow maze creation down to look at it - relax! (or don't and comment out the sleep)
       If $heading = -1 Then ExitLoop
       $stepcount -= 1 ; Count down the steps to finish.
 
@@ -59,13 +106,16 @@ Func make_maze()
    Return
 EndFunc
 
+; If needed, set the selected 'cell' to 'open' in the array, set the letter 'o' visual and set the background color to grey.
 Func open_maze($dest) ; Function set inputted cells to 'open' instead of being an uncool wall.
    $xy[$dest][4] = "o"
-   GUICtrlSetData($xy[$dest][0], 'o') ; If you want debugging numbers, replace 'o' with $dest.
-   GUICtrlSetBkColor($xy[$dest][0], 0xEEEEEE)
+   msgbox(0,"",$GUIenabled)
+   If $GUIenabled = True Then GUICtrlSetData($xy[$dest][0], 'o') ; If you want debugging numbers, replace 'o' with $dest.
+   If $GUIenabled = True Then GUICtrlSetBkColor($xy[$dest][0], 0xEEEEEE)
 EndFunc
 
-Func direction(ByRef $curpos) ; Insert current position, output next heading for path generation.
+; Insert current position, output next heading for path generation.
+Func direction(ByRef $curpos)
    Local $nesw
    Local $open_directions[5][2]
 
@@ -113,9 +163,14 @@ Func direction(ByRef $curpos) ; Insert current position, output next heading for
    EndIf
 EndFunc
 
-Func fill_open_dir($nesw, $direction, ByRef $open_directions) ; Fill the $open_directions array with a new possible way
+; Fill the $open_directions array with a new possible way
+Func fill_open_dir($nesw, $direction, ByRef $open_directions)
    $open_directions[0][0] += 1
    $open_directions[$open_directions[0][0]][1] = $nesw
    $open_directions[$open_directions[0][0]][0] = $direction
    Return
 EndFunc
+
+;init_maze()
+;make_maze(False)
+;_ArrayDisplay($xy)
