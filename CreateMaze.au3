@@ -61,7 +61,7 @@ EndFunc
 
 Func open_maze($dest) ; Function set inputted cells to 'open' instead of being an uncool wall.
    $xy[$dest][4] = "o"
-   GUICtrlSetData($xy[$dest][0], 'o') ; If you want debugging numbers, replace 'o' with $dest
+   GUICtrlSetData($xy[$dest][0], 'o') ; If you want debugging numbers, replace 'o' with $dest.
    GUICtrlSetBkColor($xy[$dest][0], 0xEEEEEE)
 EndFunc
 
